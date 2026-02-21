@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import bgGif from './assets/background.gif';
+import milkyLemon from './assets/fonts/Milky-Lemon.ttf';
 
 const WORK_MINUTES = 25;
 const BREAK_MINUTES = 5;
@@ -31,7 +33,6 @@ export default function PomodoroTunes() {
     const now = Date.now();
     if (now - lastGlassClickRef.current < 80) return;
     lastGlassClickRef.current = now;
-
     try {
       let ctx = audioCtxRef.current;
       if (!ctx) {
@@ -39,7 +40,6 @@ export default function PomodoroTunes() {
         audioCtxRef.current = ctx;
       }
       if (ctx.state === 'suspended') ctx.resume();
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -47,11 +47,27 @@ export default function PomodoroTunes() {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(3200, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(2800, ctx.currentTime + 0.04);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.setValueAtTime(0.28, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.06);
     } catch (_) {}
+  }
+
+  function playAlarm() {
+    const ctx = new AudioContext();
+    [0, 0.4, 0.8].forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.3);
+    });
   }
 
   // ── Timer logic ───────────────────────────────────────────────────────
@@ -76,13 +92,11 @@ export default function PomodoroTunes() {
   // ── Fetch current track every 5 seconds ───────────────────────────────
   useEffect(() => {
     if (!token) return;
-
     const fetchTrack = async () => {
       const data = await window.electronAPI.spotifyCurrentTrack(token);
       if (data && data.item) {
         setSongTitle(`${data.item.name} - ${data.item.artists[0].name}`);
         setIsPlaying(data.is_playing);
-
         if (data.item.id !== lastTrackId.current) {
           lastTrackId.current = data.item.id;
           const imageUrl = data.item.album.images[0].url;
@@ -91,7 +105,6 @@ export default function PomodoroTunes() {
         }
       }
     };
-
     fetchTrack();
     const interval = setInterval(fetchTrack, 5000);
     return () => clearInterval(interval);
@@ -100,6 +113,7 @@ export default function PomodoroTunes() {
   function handleSessionEnd() {
     setIsRunning(false);
     if (!isBreak) {
+      playAlarm();
       setSessions((s) => Math.min(s + 1, TOTAL_SESSIONS));
       setIsBreak(true);
       setTimeLeft(BREAK_MINUTES * 60);
@@ -150,17 +164,15 @@ export default function PomodoroTunes() {
 
   const total = isBreak ? BREAK_MINUTES * 60 : WORK_MINUTES * 60;
   const progress = 1 - timeLeft / total;
-  const circumference = 2 * Math.PI * 54;
+  const circumference = 2 * Math.PI * 62;
   const dash = circumference * (1 - progress);
 
-  // ── Theme colors ──────────────────────────────────────────────────────
   const theme = darkMode ? {
     bg: 'linear-gradient(180deg, #1a1a2e, #16213e)',
     glass: 'rgba(255,255,255,0.06)',
     border: 'rgba(255,255,255,0.12)',
     glow: 'rgba(180,100,255,0.3)',
     textMain: '#e8c4f0',
-    textSub: '#b08ec0',
     ringStroke: '#a855f7',
     ringGlow: 'rgba(168,85,247,0.6)',
     insetTop: 'rgba(255,255,255,0.1)',
@@ -170,12 +182,11 @@ export default function PomodoroTunes() {
     playColor: '#a855f7',
     sliderColor: '#a855f7',
   } : {
-    bg: 'linear-gradient(180deg, #f9a8d4, #93c5fd)',
+    bg: 'transparent',
     glass: 'rgba(255,255,255,0.15)',
     border: 'rgba(255,255,255,0.6)',
     glow: 'rgba(255,182,230,0.35)',
     textMain: '#7c3060',
-    textSub: '#a0527a',
     ringStroke: '#d946a3',
     ringGlow: 'rgba(217,70,163,0.6)',
     insetTop: 'rgba(255,255,255,0.8)',
@@ -183,20 +194,42 @@ export default function PomodoroTunes() {
     ctrlColor: 'rgba(255,255,255,0.85)',
     playBg: '#fff',
     playColor: '#d946a3',
-    sliderColor: 'rgb(255, 153, 247)',
+    sliderColor: 'rgb(255,153,247)',
   };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600&display=swap');
+        @font-face {
+            font-family: 'Milky Lemon';
+            src: url(${milkyLemon}) format('truetype');
+            font-weight: 400;
+            letter-spacing: 2px;
+            font-space: 100;
+            font-display: swap;
+          }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
           margin: 0;
           padding: 0;
-          font-family: 'Indie Flower', sans-serif;
+          font-family: 'Milky Lemon';
+          background: ${darkMode ? 'linear-gradient(180deg, #1a1a2e, #16213e)' : '#f9a8d4'};
+        }
+
+        /* ── Background gif ── */
+        .bg-gif {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: auto;
+          height: 100%;
+          z-index: 0;
+          pointer-events: none;
+          filter: blur(1px);
+          transform: scale(1.05);
+          transform-origin: left center;
         }
 
         .card {
@@ -204,17 +237,9 @@ export default function PomodoroTunes() {
           min-height: 100vh;
           border-radius: 0;
           padding: 24px 22px 26px;
-          background: ${theme.bg};
+          background: ${darkMode ? 'linear-gradient(180deg, #1a1a2e, #16213e)' : 'transparent'};
           transition: background 0.4s ease;
-        }
-
-        .card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-          pointer-events: none;
-          z-index: 0;
+          position: relative;
         }
 
         .card > * { position: relative; z-index: 1; }
@@ -223,7 +248,7 @@ export default function PomodoroTunes() {
         .top-bar {
           display: flex;
           justify-content: flex-end;
-          margin-bottom:-25px;
+          margin-bottom: -30px;
           margin-right: 400px;
         }
 
@@ -231,7 +256,7 @@ export default function PomodoroTunes() {
           width: 52px;
           height: 28px;
           border-radius: 999px;
-          background: ${darkMode ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.3)'};
+          background: ${darkMode ? 'rgba(168,85,247,0.3)' : 'rgba(253,10,204,0.3)'};
           border: 1.5px solid ${theme.border};
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
@@ -272,22 +297,31 @@ export default function PomodoroTunes() {
           -webkit-backdrop-filter: blur(20px);
           border: 1.5px solid ${theme.border};
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
-          transition: all 0.4s ease;
+          transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+          position: relative;
+          overflow: hidden;
+          cursor: default;
+        }
+
+        .title-pill:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 16px 32px rgba(0,0,0,0.2), 0 0 24px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
+          background: ${darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)'};
         }
 
         .title-pill span {
-          font-family: 'Dancing Script', cursive;
-          font-size: 22px;
+          font-family: 'Milky Lemon';
+          font-size: 25px;
           color: ${theme.textMain};
-          font-weight: 700;
-          letter-spacing: 0.3px;
+          font-weight: 600;
+          letter-spacing: 3px;
           transition: color 0.4s ease;
         }
 
         /* ── Timer box ── */
         .timer-box {
           width: 80%;
-          margin: 0 auto 16px;
+          margin: 0 auto 15px;
           background: ${theme.glass};
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -318,9 +352,10 @@ export default function PomodoroTunes() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: 'Dancing Script', cursive;
-          font-size: 38px;
-          font-weight: 700;
+          font-family: 'Milky Lemon', cursive;
+          font-size: 40px;
+          font-weight: 400;
+          letter-spacing: 3px;
           color: ${theme.textMain};
           transition: color 0.4s ease;
         }
@@ -347,9 +382,9 @@ export default function PomodoroTunes() {
         }
 
         .pill-btn {
-          font-family: 'Dancing Script', cursive;
+          font-family: 'Milky Lemon';
           font-size: 20px;
-          font-weight: 700;
+          font-weight: 600;
           color: ${theme.textMain};
           background: ${theme.glass};
           backdrop-filter: blur(20px);
@@ -359,35 +394,14 @@ export default function PomodoroTunes() {
           padding: 9px 32px;
           cursor: pointer;
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop}, inset 0 -2px 0 ${theme.insetBot};
-          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, color 0.4s, background 0.35s ease, backdrop-filter 0.35s ease;
-          letter-spacing: 0.2px;
-        }
-
-        .pill-btn {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .pill-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(255,255,255,0.08) 100%);
-          opacity: 0;
-          transition: opacity 0.35s ease;
-          pointer-events: none;
+          transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, color 0.4s, background 0.35s ease;
+          letter-spacing: 3px;
         }
 
         .pill-btn:hover {
           transform: translateY(-3px) scale(1.03);
           box-shadow: 0 16px 32px rgba(0,0,0,0.2), 0 0 24px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
-          backdrop-filter: blur(28px);
-          -webkit-backdrop-filter: blur(28px);
           background: ${darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)'};
-        }
-
-        .pill-btn:hover::before {
-          opacity: 1;
         }
 
         .pill-btn:active {
@@ -402,18 +416,12 @@ export default function PomodoroTunes() {
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
         }
 
-        .pill-btn.running:hover {
-          backdrop-filter: blur(28px);
-          -webkit-backdrop-filter: blur(28px);
-          background: ${darkMode ? 'rgba(168,85,247,0.28)' : 'rgba(252,231,243,0.5)'};
-        }
-
         /* ── Session stars ── */
         .stars-row {
           display: flex;
           justify-content: center;
           gap: 10px;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
         }
 
         .star {
@@ -465,6 +473,12 @@ export default function PomodoroTunes() {
           gap: 10px;
         }
 
+        .song-pill:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 16px 32px rgba(0,0,0,0.2), 0 0 24px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
+          background: ${darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)'};
+        }
+          
         .song-pill {
           border-radius: 999px;
           padding: 6px 16px;
@@ -478,11 +492,12 @@ export default function PomodoroTunes() {
         }
 
         .song-pill span {
-          font-family: 'Dancing Script', cursive;
+          font-family: 'Milky Lemon', cursive;
           font-size: 16px;
           color: ${theme.textMain};
-          font-weight: 700;
+          font-weight: 650;
           white-space: nowrap;
+          letter-spacing: 2px;
           display: block;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -539,7 +554,7 @@ export default function PomodoroTunes() {
           flex: 1;
           height: 6px;
           border-radius: 3px;
-          background: linear-gradient(to right, ${theme.sliderColor} 0%, ${theme.sliderColor} ${(isMuted ? 0 : volume)}%, ${theme.glass} ${(isMuted ? 0 : volume)}%, ${theme.glass} 100%);
+          background: linear-gradient(to right, ${theme.sliderColor} 0%, ${theme.sliderColor} ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) 100%);
           border: 1px solid ${theme.border};
           outline: none;
         }
@@ -555,9 +570,7 @@ export default function PomodoroTunes() {
           transition: transform 0.12s;
         }
 
-        .volume-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.15);
-        }
+        .volume-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
         .volume-slider::-moz-range-thumb {
           width: 14px;
@@ -593,6 +606,11 @@ export default function PomodoroTunes() {
         .login-btn:hover { transform: scale(1.1); }
       `}</style>
 
+      {/* Background gif, only in light mode, blurred with filter */}
+      {!darkMode && (
+        <img src={bgGif} alt="" className="bg-gif" />
+      )}
+
       <div className="card">
 
         {/* Top bar with dark mode toggle */}
@@ -601,14 +619,14 @@ export default function PomodoroTunes() {
             <div className="toggle-thumb">
               {darkMode
                 ? <svg width="12" height="12" viewBox="0 0 24 24" fill="#7c3aed"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                : <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 4.5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM2 13h2M20 13h2M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                : <svg width="12" height="12" viewBox="0 0 24 24" fill="#e879a8"><path d="M12 4.5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM2 13h2M20 13h2M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
               }
             </div>
           </div>
         </div>
 
         {/* Title */}
-        <div className="title-pill">
+        <div className="title-pill" onMouseEnter={playGlassClick}>
           <span>Pomodoro Tunes</span>
         </div>
 
@@ -624,11 +642,11 @@ export default function PomodoroTunes() {
         {/* Timer */}
         <div className="timer-box">
           <div className="timer-ring-wrap">
-            <svg width="130" height="130" viewBox="0 0 130 130">
-              <circle className="ring-bg" cx="65" cy="65" r="54" />
+            <svg width="180" height="180" viewBox="-50 0 180 180">
+              <circle className="ring-bg" cx="63" cy="65" r="62" />
               <circle
                 className="ring-fg"
-                cx="65" cy="65" r="54"
+                cx="63" cy="65" r="62"
                 strokeDasharray={circumference}
                 strokeDashoffset={dash}
               />
@@ -660,7 +678,7 @@ export default function PomodoroTunes() {
             {albumArt && <img src={albumArt} alt="album" />}
           </div>
           <div className="music-info">
-            <div className="song-pill">
+            <div className="song-pill" onMouseEnter={playGlassClick}>
               <span>{songTitle}</span>
             </div>
             <div className="controls-row">
