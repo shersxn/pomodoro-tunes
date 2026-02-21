@@ -1,8 +1,18 @@
+import dotenv from 'dotenv'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const envPath = join(process.cwd(), 'src', 'main', '.env')
+dotenv.config({ path: envPath })
 import { authenticate } from './auth'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET
+const REDIRECT_URI='http://127.0.0.1:8888/callback'
 
 function createWindow() {
   const mainWindow = new BrowserWindow({

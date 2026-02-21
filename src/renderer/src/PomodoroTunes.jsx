@@ -24,6 +24,35 @@ export default function PomodoroTunes() {
   const [darkMode, setDarkMode] = useState(false);
   const intervalRef = useRef(null);
   const lastTrackId = useRef(null);
+  const audioCtxRef = useRef(null);
+  const lastGlassClickRef = useRef(0);
+
+  function playGlassClick() {
+    const now = Date.now();
+    if (now - lastGlassClickRef.current < 80) return;
+    lastGlassClickRef.current = now;
+
+    try {
+      let ctx = audioCtxRef.current;
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        audioCtxRef.current = ctx;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(3200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(2800, ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.06);
+    } catch (_) {}
+  }
 
   // ── Timer logic ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -104,15 +133,10 @@ export default function PomodoroTunes() {
     setIsMuted((m) => !m);
   }
 
-  async function handleVolumeDown() {
-    const newVol = Math.max(0, volume - 10);
+  async function handleVolumeChange(e) {
+    const newVol = parseInt(e.target.value, 10);
     setVolume(newVol);
-    await window.electronAPI.spotifyVolume(token, newVol);
-  }
-
-  async function handleVolumeUp() {
-    const newVol = Math.min(100, volume + 10);
-    setVolume(newVol);
+    if (newVol > 0) setIsMuted(false);
     await window.electronAPI.spotifyVolume(token, newVol);
   }
 
@@ -144,6 +168,7 @@ export default function PomodoroTunes() {
     ctrlColor: 'rgba(255,255,255,0.7)',
     playBg: '#fff',
     playColor: '#a855f7',
+    sliderColor: '#a855f7',
   } : {
     bg: 'linear-gradient(180deg, #f9a8d4, #93c5fd)',
     glass: 'rgba(255,255,255,0.15)',
@@ -158,6 +183,7 @@ export default function PomodoroTunes() {
     ctrlColor: 'rgba(255,255,255,0.85)',
     playBg: '#fff',
     playColor: '#d946a3',
+    sliderColor: 'rgb(255, 153, 247)',
   };
 
   return (
@@ -333,13 +359,35 @@ export default function PomodoroTunes() {
           padding: 9px 32px;
           cursor: pointer;
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop}, inset 0 -2px 0 ${theme.insetBot};
-          transition: transform 0.12s, box-shadow 0.12s, color 0.4s, background 0.4s;
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, color 0.4s, background 0.35s ease, backdrop-filter 0.35s ease;
           letter-spacing: 0.2px;
+        }
+
+        .pill-btn {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .pill-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(255,255,255,0.08) 100%);
+          opacity: 0;
+          transition: opacity 0.35s ease;
+          pointer-events: none;
         }
 
         .pill-btn:hover {
           transform: translateY(-3px) scale(1.03);
           box-shadow: 0 16px 32px rgba(0,0,0,0.2), 0 0 24px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
+          backdrop-filter: blur(28px);
+          -webkit-backdrop-filter: blur(28px);
+          background: ${darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)'};
+        }
+
+        .pill-btn:hover::before {
+          opacity: 1;
         }
 
         .pill-btn:active {
@@ -352,6 +400,12 @@ export default function PomodoroTunes() {
           color: ${darkMode ? '#c084fc' : '#681a3c'};
           border: 1.5px solid ${theme.border};
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
+        }
+
+        .pill-btn.running:hover {
+          backdrop-filter: blur(28px);
+          -webkit-backdrop-filter: blur(28px);
+          background: ${darkMode ? 'rgba(168,85,247,0.28)' : 'rgba(252,231,243,0.5)'};
         }
 
         /* ── Session stars ── */
@@ -469,6 +523,52 @@ export default function PomodoroTunes() {
         .ctrl-btn.play-btn:hover { transform: scale(1.12); }
         .ctrl-btn svg { display: block; }
 
+        /* ── Volume slider ── */
+        .volume-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex: 1;
+          min-width: 0;
+          max-width: 120px;
+        }
+
+        .volume-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          flex: 1;
+          height: 6px;
+          border-radius: 3px;
+          background: linear-gradient(to right, ${theme.sliderColor} 0%, ${theme.sliderColor} ${(isMuted ? 0 : volume)}%, ${theme.glass} ${(isMuted ? 0 : volume)}%, ${theme.glass} 100%);
+          border: 1px solid ${theme.border};
+          outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: ${theme.sliderColor};
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          transition: transform 0.12s;
+        }
+
+        .volume-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+        }
+
+        .volume-slider::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: ${theme.sliderColor};
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
         /* ── Login button ── */
         .login-btn {
           position: fixed;
@@ -539,10 +639,10 @@ export default function PomodoroTunes() {
 
         {/* Start / Reset */}
         <div className="btn-row">
-          <button className={`pill-btn${isRunning ? " running" : ""}`} onClick={handleStart}>
+          <button className={`pill-btn${isRunning ? " running" : ""}`} onClick={handleStart} onMouseEnter={playGlassClick}>
             {isRunning ? "Pause" : "Start"}
           </button>
-          <button className="pill-btn" onClick={handleReset}>Reset</button>
+          <button className="pill-btn" onClick={handleReset} onMouseEnter={playGlassClick}>Reset</button>
         </div>
 
         {/* Session stars */}
@@ -580,22 +680,23 @@ export default function PomodoroTunes() {
                   <path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/>
                 </svg>
               </button>
-              <button className="ctrl-btn" onClick={handleVolumeDown} title="Volume Down">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.5 12A4.5 4.5 0 0 0 16 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
-                </svg>
-              </button>
-              <button className="ctrl-btn" onClick={handleMute} title={isMuted ? "Unmute" : "Mute"}>
-                {isMuted
-                  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0 0 17.73 19L19 20.27 20.27 19 5.27 4 4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
-                  : <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                }
-              </button>
-              <button className="ctrl-btn" onClick={handleVolumeUp} title="Volume Up">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                </svg>
-              </button>
+              <div className="volume-row">
+                <button className="ctrl-btn" onClick={handleMute} title={isMuted ? "Unmute" : "Mute"}>
+                  {isMuted
+                    ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0 0 17.73 19L19 20.27 20.27 19 5.27 4 4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
+                    : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  }
+                </button>
+                <input
+                  type="range"
+                  className="volume-slider"
+                  min="0"
+                  max="100"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  title="Volume"
+                />
+              </div>
             </div>
           </div>
         </div>
