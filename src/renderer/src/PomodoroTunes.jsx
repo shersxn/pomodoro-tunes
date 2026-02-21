@@ -194,7 +194,7 @@ export default function PomodoroTunes() {
     ctrlColor: 'rgba(255,255,255,0.85)',
     playBg: '#fff',
     playColor: '#d946a3',
-    sliderColor: 'rgb(255,153,247)',
+    sliderColor: 'rgb(255, 48, 238)',
   };
 
   return (
@@ -218,7 +218,6 @@ export default function PomodoroTunes() {
           background: ${darkMode ? 'linear-gradient(180deg, #1a1a2e, #16213e)' : '#f9a8d4'};
         }
 
-        /* ── Background gif ── */
         .bg-gif {
           position: fixed;
           top: 0;
@@ -244,7 +243,6 @@ export default function PomodoroTunes() {
 
         .card > * { position: relative; z-index: 1; }
 
-        /* ── Dark mode toggle ── */
         .top-bar {
           display: flex;
           justify-content: flex-end;
@@ -283,7 +281,6 @@ export default function PomodoroTunes() {
           flex-shrink: 0;
         }
 
-        /* ── Title pill ── */
         .title-pill {
           display: flex;
           align-items: center;
@@ -318,7 +315,6 @@ export default function PomodoroTunes() {
           transition: color 0.4s ease;
         }
 
-        /* ── Timer box ── */
         .timer-box {
           width: 80%;
           margin: 0 auto 15px;
@@ -370,7 +366,6 @@ export default function PomodoroTunes() {
           filter: drop-shadow(0 0 6px ${theme.ringGlow});
         }
 
-        /* ── Buttons row ── */
         .btn-row {
           display: flex;
           gap: 12px;
@@ -416,7 +411,6 @@ export default function PomodoroTunes() {
           box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
         }
 
-        /* ── Session stars ── */
         .stars-row {
           display: flex;
           justify-content: center;
@@ -442,7 +436,6 @@ export default function PomodoroTunes() {
           100% { transform: scale(1.15); }
         }
 
-        /* ── Music player row ── */
         .music-row {
           display: flex;
           align-items: center;
@@ -538,7 +531,6 @@ export default function PomodoroTunes() {
         .ctrl-btn.play-btn:hover { transform: scale(1.12); }
         .ctrl-btn svg { display: block; }
 
-        /* ── Volume slider ── */
         .volume-row {
           display: flex;
           align-items: center;
@@ -582,7 +574,6 @@ export default function PomodoroTunes() {
           box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        /* ── Login button ── */
         .login-btn {
           position: fixed;
           top: 12px;
