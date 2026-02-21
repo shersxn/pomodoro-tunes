@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import bgGif from './assets/background.gif';
+import bgGifDark from './assets/background-dark-by-broace27.gif'
 import milkyLemon from './assets/fonts/Milky-Lemon.ttf';
 
 const WORK_MINUTES = 25;
@@ -168,12 +169,12 @@ export default function PomodoroTunes() {
   const dash = circumference * (1 - progress);
 
   const theme = darkMode ? {
-    bg: 'linear-gradient(180deg, #1a1a2e, #16213e)',
-    glass: 'rgba(255,255,255,0.06)',
+    bg: 'transparent',
+    glass: 'rgba(209, 169, 207, 0.06)',
     border: 'rgba(255,255,255,0.12)',
     glow: 'rgba(180,100,255,0.3)',
     textMain: '#e8c4f0',
-    ringStroke: '#a855f7',
+    ringStroke: '#6a26a9',
     ringGlow: 'rgba(168,85,247,0.6)',
     insetTop: 'rgba(255,255,255,0.1)',
     insetBot: 'rgba(255,255,255,0.04)',
@@ -231,12 +232,20 @@ export default function PomodoroTunes() {
           transform-origin: left center;
         }
 
+        .bg-gif-dark {
+          position: fixed;
+          width:auto;
+          height: 100%;
+          transform: scale(1.1);
+          filter: blur(1px);
+        }
+
         .card {
           width: 100vw;
           min-height: 100vh;
           border-radius: 0;
           padding: 24px 22px 26px;
-          background: ${darkMode ? 'linear-gradient(180deg, #1a1a2e, #16213e)' : 'transparent'};
+          background: 'transparent';
           transition: background 0.4s ease;
           position: relative;
         }
@@ -356,7 +365,7 @@ export default function PomodoroTunes() {
           transition: color 0.4s ease;
         }
 
-        .ring-bg { fill: none; stroke: ${darkMode ? 'rgba(168,85,247,0.15)' : 'rgba(124,48,96,0.12)'}; stroke-width: 6; }
+        .ring-bg { fill: none; stroke: ${darkMode ? 'rgba(239, 220, 249, 0.15)' : 'rgba(124,48,96,0.12)'}; stroke-width: 6; }
         .ring-fg {
           fill: none;
           stroke: ${theme.ringStroke};
@@ -600,6 +609,11 @@ export default function PomodoroTunes() {
       {/* Background gif, only in light mode, blurred with filter */}
       {!darkMode && (
         <img src={bgGif} alt="" className="bg-gif" />
+      )}
+
+      {/*Background gif in dark mode, blurred with filter */}
+      {darkMode && (
+        <img src={bgGifDark} alt="" className="bg-gif-dark" />
       )}
 
       <div className="card">

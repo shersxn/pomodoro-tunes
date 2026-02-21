@@ -1,6 +1,3 @@
-const CLIENT_ID = '3f37640072e54c1e99d629c684524530'
-const CLIENT_SECRET = '5289f0d024cc41b7b8cfda03eab12316'
-const REDIRECT_URI = 'http://127.0.0.1:8888/callback'
 const SCOPES = [
   'streaming',
   'user-read-playback-state',
