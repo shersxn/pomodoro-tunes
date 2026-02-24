@@ -71,7 +71,6 @@
       });
     }
 
-    // ── Timer logic ───────────────────────────────────────────────────────
     useEffect(() => {
       if (!isRunning) {
         clearInterval(intervalRef.current);
@@ -90,7 +89,6 @@
       return () => clearInterval(intervalRef.current);
     }, [isRunning, isBreak]);
 
-    // ── Fetch current track every 5 seconds ───────────────────────────────
     useEffect(() => {
       if (!token) return;
       const fetchTrack = async () => {
@@ -149,8 +147,7 @@
     }
 
     async function handleLogin() {
-      const { getAuthUrl } = await import('./spotify');
-      const url = getAuthUrl();
+      const url = await window.electronAPI.spotifyGetAuthUrl();
       const code = await window.electronAPI.spotifyAuth(url);
       const accessToken = await window.electronAPI.spotifyGetToken(code);
       setToken(accessToken);
@@ -383,7 +380,7 @@
             font-size: 20px;
             font-weight: 600;
             color: ${theme.textMain};
-            background: ${theme.glass};
+            background: ${darkMode ? 'rgba(209, 169, 207, 0.22)' : 'rgba(255,255,255,0.4)'};
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1.5px solid ${theme.border};
@@ -398,7 +395,7 @@
           .pill-btn:hover {
             transform: translateY(-3px) scale(1.03);
             box-shadow: 0 16px 32px rgba(0,0,0,0.2), 0 0 24px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};
-            background: ${darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)'};
+            background: ${darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.5)'};
           }
 
           .pill-btn:active {
@@ -407,7 +404,7 @@
           }
 
           .pill-btn.running {
-            background: ${darkMode ? 'rgba(168,85,247,0.2)' : 'rgba(252,231,243,0.35)'};
+            background: ${darkMode ? 'rgba(168,85,247,0.38)' : 'rgba(252,231,243,0.55)'};
             color: ${darkMode ? '#e7d6e9' : '#681a3c'};
             border: 1.5px solid ${theme.border};
             box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 20px ${theme.glow}, inset 0 2px 0 ${theme.insetTop};

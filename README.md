@@ -8,8 +8,10 @@ An Electron Pomodoro Study application with Spotify music feature
 
 ## Project Setup
 
-1. Copy .env.example to .env (create locally), import to .\pomodoro-tunes\src\main\.env
-2. Fill in your own client ID and secret client ID
+1. Create a `.env` file at `src/main/.env` (create the file if the folder exists).
+2. Add your Spotify app credentials (from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)):
+   - `SPOTIFY_CLIENT_ID=your_client_id`
+   - `SPOTIFY_CLIENT_SECRET=your_client_secret`
 
 ### Install
 

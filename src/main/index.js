@@ -53,6 +53,16 @@ app.whenReady().then(() => {
   })
 
   // ── Spotify auth ──────────────────────────────────────────────────────
+  const SCOPES = ['streaming', 'user-read-playback-state', 'user-modify-playback-state', 'user-read-currently-playing'].join(' ')
+  ipcMain.handle('spotify-get-auth-url', () => {
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      response_type: 'code',
+      redirect_uri: REDIRECT_URI,
+      scope: SCOPES,
+    })
+    return `https://accounts.spotify.com/authorize?${params}`
+  })
   ipcMain.handle('spotify-auth', async (_, authUrl) => {
     const code = await authenticate(authUrl)
     return code

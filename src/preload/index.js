@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  spotifyGetAuthUrl:   ()       => ipcRenderer.invoke('spotify-get-auth-url'),
   spotifyAuth:         (authUrl) => ipcRenderer.invoke('spotify-auth', authUrl),
   spotifyGetToken:     (code)    => ipcRenderer.invoke('spotify-get-token', { code }),
   spotifyControl:      (action, token) => ipcRenderer.invoke('spotify-control', { action, token }),
